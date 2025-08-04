@@ -1,325 +1,369 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Play, UserPlus } from 'lucide-react';
-import * as THREE from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import { TextureLoader } from 'three';
 
 const Hero = () => {
-  const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const modelRef = useRef<THREE.Group | null>(null);
-  const animationRef = useRef<number | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  const COLORS = {
+    PRIMARY_BG: '#0E0B16',
+    PRIMARY_ACCENT: '#6C2BD9',
+    SECONDARY_ACCENT: '#4A2A80',
+    SURFACE: '#1A162B',
+    TEXT_MAIN: '#E0E0E0',
+    TEXT_MUTED: '#BDBDBD',
+    LINK_HOVER: '#B799FF',
+    GRADIENT_START: '#6C2BD9',
+    GRADIENT_END: '#B799FF',
+  };
+
+  const featuredLogos = [
+    { name: 'FOX40', url: 'https://fox40.com/business/press-releases/ein-presswire/825280862/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-soft-skills/', src: '/logos/Fox40.png' },
+    { name: 'AP News', url: 'https://apnews.com/press-release/ein-presswire-newsmatics/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-soft-skills-d95d1a2b7f2b0367502ec18bd0148d08', src: '/logos/AP nesw.png' },
+    { name: 'Digital Journal', url: 'https://www.digitaljournal.com/pr/news/vehement-media/teen-led-hack-united-launches-united-1122733292.html#google_vignette', src: '/logos/digital_journal2.png' },
+    { name: 'News 10', url: 'https://www.news10.com/business/press-releases/ein-presswire/825280862/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-soft-skills/', src: '/logos/News 10 logo.webp' },
+    { name: 'Benzinga', url: 'https://www.benzinga.com/content/46087906/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-sof', src: '/logos/benzinga.jpg' },
+    { name: 'BarChart', url: 'https://www.theglobeandmail.com/investing/markets/markets-news/GetNews/33037175/hack-united-empowers-youth-with-soft-skills-at-united-hacks-v5/', src: '/logos/barchart.png' },
+  ];
 
   useEffect(() => {
-    if (!mountRef.current) return;
-
-    // Scene setup
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(
-      60, // Reduced FOV for better perspective
-      mountRef.current.clientWidth / mountRef.current.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.set(0, 2, 12); // Moved camera back and up to see the full model
-    camera.lookAt(0, 0, 0); // Ensure camera is looking at the center
-
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true,
-      alpha: false 
-    });
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
-    renderer.setClearColor(0x000000, 1);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    rendererRef.current = renderer;
-
-    mountRef.current.appendChild(renderer.domElement);
-
-    // Lighting - Enhanced lighting for the new 3D model
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // Balanced ambient light
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2); // Main directional light
-    directionalLight.position.set(5, 5, 5);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
-
-    const pointLight = new THREE.PointLight(0x60A5FA, 1.5, 100); // Blue accent light
-    pointLight.position.set(0, 2, 2);
-    scene.add(pointLight);
-
-    // Additional accent lights for better model visibility
-    const accentLight1 = new THREE.SpotLight(0xffffff, 1.0, 50, Math.PI / 6, 0.5);
-    accentLight1.position.set(-3, 3, 3);
-    scene.add(accentLight1);
-
-    const accentLight2 = new THREE.PointLight(0x1D4ED8, 0.8, 30);
-    accentLight2.position.set(3, -2, 1);
-    scene.add(accentLight2);
-
-    // Rim light for depth
-    const rimLight = new THREE.DirectionalLight(0x1E40AF, 0.8);
-    rimLight.position.set(-5, 0, -5);
-    scene.add(rimLight);
-
-    // Holographic glow effect
-    const glowLight = new THREE.PointLight(0x00FFFF, 0.8, 40);
-    glowLight.position.set(0, 0, 3);
-    scene.add(glowLight);
-
-    // Load textures
-    const textureLoader = new THREE.TextureLoader();
-    const modelTexture = textureLoader.load(
-      '/_0731232307_texture.png',
-      undefined,
-      undefined,
-      (error) => console.error('Error loading model texture:', error)
-    );
-
-    // Load FBX model
-    const loader = new FBXLoader();
-    loader.load(
-      '/_0731232307_texture.fbx',
-      (object) => {
-        console.log('Model loaded successfully:', object);
-        console.log('Model children:', object.children);
-        
-        // Calculate model bounds to ensure proper positioning
-        const box = new THREE.Box3().setFromObject(object);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        
-        console.log('Model bounds:', { size, center });
-        
-        // Scale the model to fit within view
-        const maxDimension = Math.max(size.x, size.y, size.z);
-        const scale = 8 / maxDimension; // Scale to fit within 8 units
-        object.scale.setScalar(scale);
-        
-        // Center the model
-        object.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-        
-        // Apply textures to the model
-        object.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            console.log('Processing mesh:', child.name, child.position);
-            child.castShadow = true;
-            child.receiveShadow = true;
-            
-            // Apply texture to all materials
-            if (child.material) {
-              child.material.map = modelTexture;
-              child.material.transparent = true;
-              child.material.opacity = 0.9;
-              child.material.emissive = new THREE.Color(0x00ffff);
-              child.material.emissiveIntensity = 0.3;
-              child.material.needsUpdate = true;
-            }
-          }
-        });
-
-        modelRef.current = object;
-        scene.add(object);
-        
-        // Adjust camera position based on model size
-        const finalBox = new THREE.Box3().setFromObject(object);
-        const finalSize = finalBox.getSize(new THREE.Vector3());
-        const maxSize = Math.max(finalSize.x, finalSize.y, finalSize.z);
-        
-        // Position camera to see the entire model with some margin
-        const distance = maxSize * 2;
-        camera.position.set(0, distance * 0.3, distance);
-        camera.lookAt(0, 0, 0);
-        camera.updateProjectionMatrix();
-        
-        console.log('Adjusted camera position:', camera.position);
-        
-        setIsLoading(false);
-      },
-      (progress) => {
-        console.log('Loading progress:', (progress.loaded / progress.total) * 100, '%');
-      },
-      (error) => {
-        console.error('Error loading FBX model:', error);
-        setIsLoading(false);
-        
-        // Create a fallback sphere if model fails to load
-        const geometry = new THREE.SphereGeometry(2, 32, 32);
-        const material = new THREE.MeshPhongMaterial({ 
-          color: 0x3B82F6,
-          transparent: true,
-          opacity: 0.8,
-          emissive: 0x1E40AF,
-          emissiveIntensity: 0.2
-        });
-        const sphere = new THREE.Mesh(geometry, material);
-        modelRef.current = sphere;
-        scene.add(sphere);
-      }
-    );
-
-    // Animation loop
-    const animate = () => {
-      animationRef.current = requestAnimationFrame(animate);
-
-      if (modelRef.current) {
-        // Rotate the model
-        modelRef.current.rotation.y += 0.01;
-      }
-
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // Handle mouse movement for interactive rotation - only when hovering over the model
-    let isMouseDown = false;
-    let lastMouseX = 0;
-    let lastMouseY = 0;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if (!mountRef.current) return;
-      
-      const rect = mountRef.current.getBoundingClientRect();
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      
-      // Check if mouse is within the model container bounds
-      if (mouseX >= rect.left && mouseX <= rect.right && 
-          mouseY >= rect.top && mouseY <= rect.bottom) {
-        isMouseDown = true;
-        lastMouseX = mouseX;
-        lastMouseY = mouseY;
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isMouseDown || !modelRef.current) return;
-
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      
-      const deltaX = mouseX - lastMouseX;
-      const deltaY = mouseY - lastMouseY;
-      
-      // Rotate based on mouse movement (clockwise/counterclockwise)
-      modelRef.current.rotation.y += deltaX * 0.01; // Horizontal rotation
-      modelRef.current.rotation.x += deltaY * 0.01; // Vertical rotation
-      
-      lastMouseX = mouseX;
-      lastMouseY = mouseY;
-    };
-
-    const handleMouseUp = () => {
-      isMouseDown = false;
-    };
-
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    // Handle window resize
-    const handleResize = () => {
-      if (!mountRef.current || !renderer || !camera) return;
-
-      const width = mountRef.current.clientWidth;
-      const height = mountRef.current.clientHeight;
-
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('resize', handleResize);
-      
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-      
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
-      
-      renderer.dispose();
-    };
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const scrollToNext = () => {
+    const nextSection = document.getElementById('why-join');
+    if (nextSection) {
+      nextSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <section id="home" className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
-      {/* Animated background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-        <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-blue-500 rounded-full animate-ping"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-blue-300 rounded-full animate-pulse delay-300"></div>
-        <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-blue-600 rounded-full animate-ping delay-500"></div>
-      </div>
+    <>
+      <style>
+        {`
+          @import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,400,700,500,600,300&display=swap');
+          @import url('https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400,700&display=swap');
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="flex flex-col lg:flex-row items-center justify-between">
-          <div className="lg:w-1/2 mb-12 lg:mb-0">
-            <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-300 bg-clip-text text-transparent animate-pulse">
-              United Hacks V6
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0">
-              The Ultimate Global Online Hackathon - Code. Create. Compete.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-  <a
-    href="https://www.youtube.com/watch?v=p8CHaDP3Bxg"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
-  >
-    <Play size={20} />
-    Watch Trailer
-  </a>
+          :root {
+            --font-heading: 'Clash Display', sans-serif;
+            --font-body: 'General Sans', sans-serif;
+          }
 
-  <a
-    href="https://docs.google.com/forms/d/e/1FAIpQLSehFwBX1yMcW1BjX-8XcC-vHnUgNE9Wv8iVvbSIO3361QneWg/viewform?pli=1&pli=1&pli=1&edit2=2_ABaOnucxaiQsOarIkNlEYleII0UX-lueNbcBAdyYHXPLfyUWP_s7iGIDg6UiFGUzpQ"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
-  >
-    <UserPlus size={20} />
-    Register Now
-  </a>
-</div>
+          .hero-gradient {
+            background: linear-gradient(135deg, ${COLORS.PRIMARY_BG} 0%, ${COLORS.SURFACE} 50%, ${COLORS.PRIMARY_BG} 100%);
+            position: relative;
+            overflow: hidden;
+          }
 
-          </div>
+          .hero-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, ${COLORS.PRIMARY_ACCENT}20 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, ${COLORS.LINK_HOVER}15 0%, transparent 50%),
+                        radial-gradient(circle at 40% 40%, ${COLORS.SECONDARY_ACCENT}10 0%, transparent 50%);
+            animation: gradientShift 8s ease-in-out infinite;
+          }
 
-          {/* 3D Model - Now on the right */}
-          <div className="lg:w-1/2 flex justify-center">
-            <div 
-              ref={mountRef} 
-              className="model-container relative cursor-grab active:cursor-grabbing"
-              style={{ width: '600px', height: '600px' }}
-            >
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 rounded-lg">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-blue-400">Loading 3D Model...</p>
-                  </div>
+          @keyframes gradientShift {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+          }
+
+          .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+          }
+
+          .particle {
+            position: absolute;
+            background: ${COLORS.LINK_HOVER};
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            opacity: 0.1;
+          }
+
+          .particle:nth-child(1) { width: 4px; height: 4px; top: 20%; left: 10%; animation-delay: 0s; }
+          .particle:nth-child(2) { width: 6px; height: 6px; top: 60%; left: 20%; animation-delay: 1s; }
+          .particle:nth-child(3) { width: 3px; height: 3px; top: 40%; left: 70%; animation-delay: 2s; }
+          .particle:nth-child(4) { width: 5px; height: 5px; top: 80%; left: 80%; animation-delay: 3s; }
+          .particle:nth-child(5) { width: 4px; height: 4px; top: 30%; left: 90%; animation-delay: 4s; }
+
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(10px) rotate(240deg); }
+          }
+
+          .hero-title {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            background: linear-gradient(135deg, ${COLORS.TEXT_MAIN}, ${COLORS.LINK_HOVER}, ${COLORS.PRIMARY_ACCENT});
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGradient 4s ease-in-out infinite;
+            text-shadow: 0 0 40px rgba(183, 153, 255, 0.3);
+          }
+
+          @keyframes titleGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+
+          .hero-subtitle {
+            font-family: var(--font-body);
+            color: ${COLORS.TEXT_MUTED};
+            font-weight: 500;
+            line-height: 1.6;
+          }
+
+          .cta-button {
+            font-family: var(--font-body);
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+          }
+
+          .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s ease-in-out;
+          }
+
+          .cta-button:hover::before {
+            left: 100%;
+          }
+
+          .cta-primary {
+            background: linear-gradient(135deg, ${COLORS.PRIMARY_ACCENT}, ${COLORS.LINK_HOVER});
+            box-shadow: 0 8px 32px rgba(108, 43, 217, 0.3);
+          }
+
+          .cta-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(108, 43, 217, 0.4);
+          }
+
+          .cta-secondary {
+            background: linear-gradient(135deg, ${COLORS.SURFACE}, ${COLORS.SECONDARY_ACCENT});
+            border: 1px solid rgba(183, 153, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(74, 42, 128, 0.2);
+          }
+
+          .cta-secondary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(74, 42, 128, 0.3);
+            border-color: rgba(183, 153, 255, 0.5);
+          }
+
+          .logo-container {
+            position: relative;
+            animation: logoFloat 6s ease-in-out infinite;
+          }
+
+          @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(2deg); }
+          }
+
+          .featured-logos {
+            opacity: 0;
+            animation: slideInUp 1s ease-out 1.5s forwards;
+          }
+
+          @keyframes slideInUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease-out forwards;
+          }
+
+          .fade-in-up.delay-1 { animation-delay: 0.2s; }
+          .fade-in-up.delay-2 { animation-delay: 0.4s; }
+          .fade-in-up.delay-3 { animation-delay: 0.6s; }
+          .fade-in-up.delay-4 { animation-delay: 0.8s; }
+
+          @keyframes fadeInUp {
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .interactive-bg {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, ${COLORS.PRIMARY_ACCENT}10 0%, transparent 70%);
+            pointer-events: none;
+            transition: all 0.3s ease;
+            opacity: 0;
+          }
+
+          .interactive-bg.active {
+            opacity: 1;
+          }
+        `}
+      </style>
+
+      <section id="home" className="hero-gradient min-h-screen flex flex-col justify-center items-center relative py-24 sm:py-32">
+        {/* Interactive Background Effect */}
+        <div
+          className={`interactive-bg`}
+          style={{
+            left: `calc(50vw - 100px)`,
+            top: `calc(50vh - 100px)`,
+          }}
+        />
+
+        {/* Floating Particles */}
+        <div className="floating-particles">
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 w-full">
+          {isMobile ? (
+            // Mobile View
+            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)]">
+              {/* Main Heading */}
+              <div className={`fade-in-up`}>
+                <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight">
+                  United<br />
+                  Hacks V6
+                </h1>
+              </div>
+
+              {/* Subheading */}
+              <p className={`hero-subtitle text-xl sm:text-2xl lg:text-3xl max-w-2xl mx-auto mt-8 fade-in-up delay-1`}>
+                The Ultimate Global Online Hackathon – Code. Create. Compete.
+              </p>
+
+              {/* CTA Buttons */}
+              <div className={`flex flex-col sm:flex-row gap-6 justify-center mt-8 fade-in-up delay-2`}>
+                <button
+                  className="cta-button cta-primary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
+                  onClick={() => window.open('https://www.youtube.com/watch?v=p8CHaDP3Bxg', '_blank')}
+                >
+                  <Play size={20} />
+                  Watch Trailer
+                </button>
+
+                <button
+                  className="cta-button cta-secondary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
+                  onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSehFwBX1yMcW1BjX-8XcC-vHnUgNE9Wv8iVvbSIO3361QneWg/viewform', '_blank')}
+                >
+                  <UserPlus size={20} />
+                  Register Now
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Desktop View
+            <div className="flex flex-col lg:flex-row items-center justify-between w-full">
+              {/* Left Content Block */}
+              <div className="space-y-8 flex flex-col items-center lg:items-start text-center lg:text-left">
+                {/* Main Heading */}
+                <div className={`fade-in-up`}>
+                  <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight">
+                    United<br />
+                    Hacks V6
+                  </h1>
                 </div>
-              )}
+
+                {/* Subheading */}
+                <p className={`hero-subtitle text-xl sm:text-2xl lg:text-3xl max-w-2xl mx-auto lg:mx-0 mt-8 fade-in-up delay-1`}>
+                  The Ultimate Global Online Hackathon – Code. Create. Compete.
+                </p>
+
+                {/* CTA Buttons */}
+                <div className={`flex flex-col sm:flex-row gap-6 justify-center lg:justify-start mt-8 fade-in-up delay-2`}>
+                  <button
+                    className="cta-button cta-primary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
+                    onClick={() => window.open('https://www.youtube.com/watch?v=p8CHaDP3Bxg', '_blank')}
+                  >
+                    <Play size={20} />
+                    Watch Trailer
+                  </button>
+
+                  <button
+                    className="cta-button cta-secondary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
+                    onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSehFwBX1yMcW1BjX-8XcC-vHnUgNE9Wv8iVvbSIO3361QneWg/viewform', '_blank')}
+                  >
+                    <UserPlus size={20} />
+                    Register Now
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Logo Block */}
+              <div className={`mt-12 lg:mt-0 fade-in-up delay-4 flex justify-center lg:justify-end`}>
+                <div className="relative">
+                  <a
+                    href="https://hackunited.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block cursor-pointer transform transition-all duration-300 hover:scale-105"
+                  >
+                    <img
+                      src="/HackUnitedLogo.webp"
+                      alt="HackUnited V6 Logo"
+                      className="w-full h-auto max-h-80 object-contain"
+                    />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Featured In Section */}
+          <div className={`featured-logos pt-8 fade-in-up delay-3 mt-8`}>
+            <p className="text-sm font-medium mb-6" style={{ color: COLORS.TEXT_MUTED }}>
+              FEATURED IN
+            </p>
+            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
+              {featuredLogos.map((logo) => (
+                <a key={logo.name} href={logo.url} target="_blank" rel="noopener noreferrer">
+                  <img src={logo.src} alt={`${logo.name} Logo`} className="w-auto h-8 sm:h-10 transition-all hover:opacity-100" />
+                </a>
+              ))}
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };
 
