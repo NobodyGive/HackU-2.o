@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import GalaxySection from './components/GalaxySection';
+import GalaxySectionWrapper from './components/GalaxySection2';
 import About from './components/About';
 
 import WhyParticipate from './components/WhyParticipate';
@@ -37,11 +37,12 @@ function App() {
       <Hero />
       
       <About />
-      <GalaxySection />
+      <GalaxySectionWrapper />
       <WhyParticipate />
       <Judges />
       <Requirements />
       <Prizes />
+      
       <FAQ />
       <Contact />
       <Footer />
