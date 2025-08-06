@@ -3,7 +3,12 @@ import { Play, UserPlus } from 'lucide-react';
 
 const Hero = () => {
   const [isMobile, setIsMobile] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
 
   const COLORS = {
     PRIMARY_BG: '#0E0B16',
@@ -17,15 +22,6 @@ const Hero = () => {
     GRADIENT_END: '#B799FF',
   };
 
-  const featuredLogos = [
-    { name: 'FOX40', url: 'https://fox40.com/business/press-releases/ein-presswire/825280862/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-soft-skills/', src: '/logos/Fox40.png' },
-    { name: 'AP News', url: 'https://apnews.com/press-release/ein-presswire-newsmatics/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-soft-skills-d95d1a2b7f2b0367502ec18bd0148d08', src: '/logos/AP nesw.png' },
-    { name: 'Digital Journal', url: 'https://www.digitaljournal.com/pr/news/vehement-media/teen-led-hack-united-launches-united-1122733292.html#google_vignette', src: '/logos/digital_journal2.png' },
-    { name: 'News 10', url: 'https://www.news10.com/business/press-releases/ein-presswire/825280862/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-soft-skills/', src: '/logos/News 10 logo.webp' },
-    { name: 'Benzinga', url: 'https://www.benzinga.com/content/46087906/hack-united-unveils-united-hacks-v5-a-global-hackathon-equipping-youth-innovation-with-essential-sof', src: '/logos/benzinga.jpg' },
-    { name: 'BarChart', url: 'https://www.theglobeandmail.com/investing/markets/markets-news/GetNews/33037175/hack-united-empowers-youth-with-soft-skills-at-united-hacks-v5/', src: '/logos/barchart.png' },
-  ];
-
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -33,29 +29,63 @@ const Hero = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const scrollToNext = () => {
-    const nextSection = document.getElementById('why-join');
-    if (nextSection) {
-      nextSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      // Target date: January 16, 2025 at 6:00 PM CST (UTC-6)
+      // Convert to UTC: January 17, 2025 at 00:00 UTC
+      const targetDate = new Date('2025-01-17T00:00:00.000Z');
+      const now = new Date();
+      const difference = targetDate.getTime() - now.getTime();
+
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        const seconds = Math.floor((difference / 1000) % 60);
+
+        setTimeLeft({ days, hours, minutes, seconds });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      }
+    };
+
+    // Calculate immediately
+    calculateTimeLeft();
+
+    // Update every second
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    // Cleanup
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <>
       <style>
         {`
-          @import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,400,700,500,600,300&display=swap');
-          @import url('https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400,700&display=swap');
-
+          /* Using Times New Roman as requested */
           :root {
-            --font-heading: 'Clash Display', sans-serif;
-            --font-body: 'General Sans', sans-serif;
+            --font-heading: 'Times New Roman', serif;
+            --font-body: 'Times New Roman', serif;
+            --font-code: 'IBM Plex Mono', monospace;
+          }
+
+          body {
+            font-family: var(--font-body);
+          }
+          
+          #app-wrapper {
+            background-image: url('/Background.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            min-height: 100vh;
           }
 
           .hero-gradient {
-            background: linear-gradient(135deg, ${COLORS.PRIMARY_BG} 0%, ${COLORS.SURFACE} 50%, ${COLORS.PRIMARY_BG} 100%);
             position: relative;
             overflow: hidden;
+            background: rgba(14, 11, 22, 0.8); /* Semi-transparent overlay */
           }
 
           .hero-gradient::before {
@@ -174,6 +204,102 @@ const Hero = () => {
             border-color: rgba(183, 153, 255, 0.5);
           }
 
+          .countdown-container {
+            background: linear-gradient(135deg, rgba(26, 22, 43, 0.8), rgba(74, 42, 128, 0.6));
+            border: 1px solid rgba(183, 153, 255, 0.2);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(108, 43, 217, 0.2);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .countdown-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(183, 153, 255, 0.1), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+          }
+
+          @keyframes shimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 100%; }
+          }
+
+          .countdown-title {
+            font-family: var(--font-heading);
+            color: ${COLORS.TEXT_MAIN};
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            text-align: center;
+          }
+
+          .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            position: relative;
+            z-10;
+          }
+
+          .countdown-item {
+            text-align: center;
+            background: rgba(14, 11, 22, 0.6);
+            border-radius: 12px;
+            padding: 16px 8px;
+            border: 1px solid rgba(183, 153, 255, 0.1);
+            transition: all 0.3s ease;
+          }
+
+          .countdown-item:hover {
+            border-color: rgba(183, 153, 255, 0.3);
+            transform: translateY(-2px);
+          }
+
+          .countdown-number {
+            font-family: var(--font-code);
+            font-size: 2rem;
+            font-weight: 800;
+            color: ${COLORS.LINK_HOVER};
+            display: block;
+            line-height: 1.2;
+            text-shadow: 0 0 20px rgba(183, 153, 255, 0.4);
+          }
+
+          .countdown-label {
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            color: ${COLORS.TEXT_MUTED};
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 8px;
+          }
+
+          @media (max-width: 640px) {
+            .countdown-grid {
+              gap: 12px;
+            }
+            
+            .countdown-item {
+              padding: 12px 6px;
+            }
+            
+            .countdown-number {
+              font-size: 1.5rem;
+            }
+            
+            .countdown-label {
+              font-size: 0.75rem;
+            }
+          }
+
           .logo-container {
             position: relative;
             animation: logoFloat 6s ease-in-out infinite;
@@ -234,135 +360,70 @@ const Hero = () => {
           }
         `}
       </style>
-
-      <section id="home" className="hero-gradient min-h-screen flex flex-col justify-center items-center relative py-24 sm:py-32">
-        {/* Interactive Background Effect */}
-        <div
-          className={`interactive-bg`}
-          style={{
-            left: `calc(50vw - 100px)`,
-            top: `calc(50vh - 100px)`,
-          }}
-        />
-
-        {/* Floating Particles */}
-        <div className="floating-particles">
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 w-full">
-          {isMobile ? (
-            // Mobile View
-            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)]">
-              {/* Main Heading */}
-              <div className={`fade-in-up`}>
-                <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight">
-                  United<br />
-                  Hacks V6
-                </h1>
-              </div>
-
-              {/* Subheading */}
-              <p className={`hero-subtitle text-xl sm:text-2xl lg:text-3xl max-w-2xl mx-auto mt-8 fade-in-up delay-1`}>
-                The Ultimate Global Online Hackathon – Code. Create. Compete.
-              </p>
-
-              {/* CTA Buttons */}
-              <div className={`flex flex-col sm:flex-row gap-6 justify-center mt-8 fade-in-up delay-2`}>
-                <button
-                  className="cta-button cta-primary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
-                  onClick={() => window.open('https://www.youtube.com/watch?v=p8CHaDP3Bxg', '_blank')}
-                >
-                  <Play size={20} />
-                  Watch Trailer
-                </button>
-
-                <button
-                  className="cta-button cta-secondary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
-                  onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSehFwBX1yMcW1BjX-8XcC-vHnUgNE9Wv8iVvbSIO3361QneWg/viewform', '_blank')}
-                >
-                  <UserPlus size={20} />
-                  Register Now
-                </button>
-              </div>
+      
+      <div id="app-wrapper">
+        <section id="home" className="hero-gradient min-h-screen flex flex-col justify-center items-center relative py-24 sm:py-32">
+          {/* Main Content Block for Centering */}
+          <div className="flex flex-col items-center w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            {/* Main Heading */}
+            <div className={`fade-in-up`}>
+              <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight">
+                United<br />
+                Hacks V6
+              </h1>
             </div>
-          ) : (
-            // Desktop View
-            <div className="flex flex-col lg:flex-row items-center justify-between w-full">
-              {/* Left Content Block */}
-              <div className="space-y-8 flex flex-col items-center lg:items-start text-center lg:text-left">
-                {/* Main Heading */}
-                <div className={`fade-in-up`}>
-                  <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight">
-                    United<br />
-                    Hacks V6
-                  </h1>
-                </div>
 
-                {/* Subheading */}
-                <p className={`hero-subtitle text-xl sm:text-2xl lg:text-3xl max-w-2xl mx-auto lg:mx-0 mt-8 fade-in-up delay-1`}>
-                  The Ultimate Global Online Hackathon – Code. Create. Compete.
-                </p>
-
-                {/* CTA Buttons */}
-                <div className={`flex flex-col sm:flex-row gap-6 justify-center lg:justify-start mt-8 fade-in-up delay-2`}>
-                  <button
-                    className="cta-button cta-primary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
-                    onClick={() => window.open('https://www.youtube.com/watch?v=p8CHaDP3Bxg', '_blank')}
-                  >
-                    <Play size={20} />
-                    Watch Trailer
-                  </button>
-
-                  <button
-                    className="cta-button cta-secondary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
-                    onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSehFwBX1yMcW1BjX-8XcC-vHnUgNE9Wv8iVvbSIO3361QneWg/viewform', '_blank')}
-                  >
-                    <UserPlus size={20} />
-                    Register Now
-                  </button>
-                </div>
-              </div>
-
-              {/* Right Logo Block */}
-              <div className={`mt-12 lg:mt-0 fade-in-up delay-4 flex justify-center lg:justify-end`}>
-                <div className="relative">
-                  <a
-                    href="https://hackunited.org"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block cursor-pointer transform transition-all duration-300 hover:scale-105"
-                  >
-                    <img
-                      src="/HackUnitedLogo.webp"
-                      alt="HackUnited V6 Logo"
-                      className="w-full h-auto max-h-80 object-contain"
-                    />
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Featured In Section */}
-          <div className={`featured-logos pt-8 fade-in-up delay-3 mt-8`}>
-            <p className="text-sm font-medium mb-6" style={{ color: COLORS.TEXT_MUTED }}>
-              FEATURED IN
+            {/* Subheading */}
+            <p className={`hero-subtitle text-xl sm:text-2xl lg:text-3xl max-w-2xl mx-auto mt-8 fade-in-up delay-1`}>
+              The Ultimate Global Online Hackathon – Code. Create. Compete.
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
-              {featuredLogos.map((logo) => (
-                <a key={logo.name} href={logo.url} target="_blank" rel="noopener noreferrer">
-                  <img src={logo.src} alt={`${logo.name} Logo`} className="w-auto h-8 sm:h-10 transition-all hover:opacity-100" />
-                </a>
-              ))}
+
+            {/* CTA Buttons */}
+            <div className={`flex flex-col sm:flex-row gap-6 justify-center mt-8 fade-in-up delay-2`}>
+              <button
+                className="cta-button cta-primary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
+                onClick={() => window.open('https://www.youtube.com/watch?v=p8CHaDP3Bxg', '_blank')}
+              >
+                <Play size={20} />
+                Watch Trailer
+              </button>
+
+              <button
+                className="cta-button cta-secondary px-8 py-4 text-white font-semibold flex items-center justify-center gap-3 text-lg"
+                onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSehFwBX1yMcW1BjX-8XcC-vHnUgNE9Wv8iVvbSIO3361QneWg/viewform', '_blank')}
+              >
+                <UserPlus size={20} />
+                Register Now
+              </button>
+            </div>
+
+            {/* Countdown Timer */}
+            <div className={`countdown-container max-w-2xl mx-auto mt-12 fade-in-up delay-3`}>
+              <div className="countdown-title">
+                Event Starts In
+              </div>
+              <div className="countdown-grid">
+                <div className="countdown-item">
+                  <span className="countdown-number">{timeLeft.days}</span>
+                  <div className="countdown-label">Days</div>
+                </div>
+                <div className="countdown-item">
+                  <span className="countdown-number">{timeLeft.hours}</span>
+                  <div className="countdown-label">Hours</div>
+                </div>
+                <div className="countdown-item">
+                  <span className="countdown-number">{timeLeft.minutes}</span>
+                  <div className="countdown-label">Minutes</div>
+                </div>
+                <div className="countdown-item">
+                  <span className="countdown-number">{timeLeft.seconds}</span>
+                  <div className="countdown-label">Seconds</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </>
   );
 };
